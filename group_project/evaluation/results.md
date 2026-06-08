@@ -2,7 +2,7 @@
 
 ## Framework sử dụng
 
-> **DeepEval (Local Fallback Engine)**
+> **DeepEval (Real API Mode)**
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Metric | Config A (Hybrid + Rerank) | Config B (Dense-only) | Δ |
 |--------|---------------------------|----------------------|---|
-| Faithfulness | 0.95 | 0.91 | +0.04 |
-| Answer Relevance | 0.77 | 0.67 | +0.10 |
+| Faithfulness | 0.77 | 0.75 | +0.02 |
+| Answer Relevance | 0.93 | 0.89 | +0.04 |
 | Context Recall | 0.80 | 0.59 | +0.21 |
-| Context Precision | 0.82 | 0.73 | +0.09 |
-| **Average** | **0.84** | **0.73** | **+0.11** |
+| Context Precision | 0.86 | 0.73 | +0.13 |
+| **Average** | **0.84** | **0.74** | **+0.10** |
 
 ---
 
@@ -29,7 +29,7 @@
 * Chỉ sử dụng duy nhất mô hình Semantic Search để tìm kiếm các văn bản liên quan dựa trên Cosine Similarity, không áp dụng thêm bất kỳ bộ lọc từ khóa hoặc reranking nào.
 
 **Kết luận:**
-* Cấu hình **Config A (Hybrid + Rerank)** đạt điểm số trung bình vượt trội hơn hẳn Config B (+0.11). 
+* Cấu hình **Config A (Hybrid + Rerank)** đạt điểm số trung bình vượt trội hơn hẳn Config B (+0.10). 
 * Điểm số cải thiện rõ rệt nhất ở chỉ số **Context Recall** và **Context Precision** nhờ vào sự kết hợp giữa tìm kiếm ngữ nghĩa và tìm kiếm từ khóa chính xác của BM25, giúp bao quát đầy đủ thông tin pháp luật có cấu trúc chặt chẽ.
 
 ---
@@ -38,9 +38,9 @@
 
 | # | Question | Faithfulness | Relevance | Recall | Failure Stage | Root Cause |
 |---|----------|-------------|-----------|--------|---------------|------------|
-| 1 | Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào? | 0.96 | 0.63 | 0.57 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
-| 2 | Trách nhiệm cai nghiện ma túy tự nguyện được khuyến khích cho ai theo Luật 2021? | 0.96 | 0.63 | 0.57 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
-| 3 | Chính sách của Nhà nước về phòng, chống ma túy gồm những gì theo Điều 3? | 0.93 | 0.61 | 0.65 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
+| 1 | Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào? | 0.54 | 0.83 | 0.61 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
+| 2 | Trách nhiệm cai nghiện ma túy tự nguyện được khuyến khích cho ai theo Luật 2021? | 0.56 | 0.83 | 0.61 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
+| 3 | Chính sách của Nhà nước về phòng, chống ma túy gồm những gì theo Điều 3? | 0.62 | 1.00 | 0.61 | Retrieval | Từ khóa tìm kiếm quá trừu tượng hoặc tài liệu nguồn chưa được chunking hợp lý. |
 
 ---
 
