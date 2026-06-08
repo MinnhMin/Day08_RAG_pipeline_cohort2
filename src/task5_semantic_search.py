@@ -41,14 +41,16 @@ def _load_vector_store() -> list[dict]:
 
 def _embed_query(query: str) -> list[float]:
     """Embed câu query bằng cùng phương pháp với Task 4."""
-    # Thử dùng SentenceTransformer trước
-    try:
-        from sentence_transformers import SentenceTransformer
-        from src.task4_chunking_indexing import EMBEDDING_MODEL
-        model = SentenceTransformer(EMBEDDING_MODEL)
-        return model.encode(query).tolist()
-    except Exception:
-        pass
+    # Thử dùng SentenceTransformer trước (chỉ khi có cấu hình rõ ràng)
+    import os
+    if os.getenv("USE_SENTENCE_TRANSFORMERS", "0") == "1":
+        try:
+            from sentence_transformers import SentenceTransformer
+            from src.task4_chunking_indexing import EMBEDDING_MODEL
+            model = SentenceTransformer(EMBEDDING_MODEL)
+            return model.encode(query).tolist()
+        except Exception:
+            pass
 
     # Fallback: dùng cùng FallbackVectorizer như Task 4
     try:

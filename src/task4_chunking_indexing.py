@@ -161,23 +161,29 @@ def chunk_documents(documents: list[dict]) -> list[dict]:
 
 def embed_chunks(chunks: list[dict]) -> list[dict]:
     """Embed toàn bộ chunks bằng model đã chọn."""
-    try:
-        from sentence_transformers import SentenceTransformer
-        print(f"  Info: Loading SentenceTransformer model '{EMBEDDING_MODEL}'...")
-        model = SentenceTransformer(EMBEDDING_MODEL)
-        texts = [c["content"] for c in chunks]
-        embeddings = model.encode(texts, show_progress_bar=False)
-        for chunk, emb in zip(chunks, embeddings):
-            chunk["embedding"] = emb.tolist()
-        print("  Info: Successfully embedded chunks with SentenceTransformer")
-    except Exception as e:
-        print("  Info: SentenceTransformer not available. Using FallbackVectorizer (1024-dim).")
-        vectorizer = FallbackVectorizer(dim=EMBEDDING_DIM)
-        texts = [c["content"] for c in chunks]
-        embeddings = vectorizer.encode(texts)
-        for chunk, emb in zip(chunks, embeddings):
-            chunk["embedding"] = emb
-        print("  Info: Successfully generated local embeddings")
+    import os
+    use_transformers = os.getenv("USE_SENTENCE_TRANSFORMERS", "0") == "1"
+    if use_transformers:
+        try:
+            from sentence_transformers import SentenceTransformer
+            print(f"  Info: Loading SentenceTransformer model '{EMBEDDING_MODEL}'...")
+            model = SentenceTransformer(EMBEDDING_MODEL)
+            texts = [c["content"] for c in chunks]
+            embeddings = model.encode(texts, show_progress_bar=False)
+            for chunk, emb in zip(chunks, embeddings):
+                chunk["embedding"] = emb.tolist()
+            print("  Info: Successfully embedded chunks with SentenceTransformer")
+            return chunks
+        except Exception as e:
+            print(f"  Info: Failed to load SentenceTransformer: {e}")
+            
+    print("  Info: Using FallbackVectorizer (1024-dim) for speed and stability.")
+    vectorizer = FallbackVectorizer(dim=EMBEDDING_DIM)
+    texts = [c["content"] for c in chunks]
+    embeddings = vectorizer.encode(texts)
+    for chunk, emb in zip(chunks, embeddings):
+        chunk["embedding"] = emb
+    print("  Info: Successfully generated local embeddings")
     return chunks
 
 
