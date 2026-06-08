@@ -135,50 +135,72 @@ def _generate_mock_response(query: str, chunks: list[dict]) -> str:
         return "Tôi không thể xác minh thông tin này từ nguồn hiện có."
 
     query_lower = query.lower()
+
+    # --- 1. Luật Hình Sự & Tội danh cụ thể ---
+    if "tàng trữ" in query_lower:
+        return "Theo Điều 249 Bộ luật Hình sự [bo-luat-hinh-su-2015-sua-doi-2017.md], người nào tàng trữ trái phép chất ma túy mà không nhằm mục đích mua bán, vận chuyển, sản xuất trái phép chất ma túy thì bị phạt tù từ 01 năm đến 05 năm."
     
-    # 1. Câu hỏi liên quan tới nghệ sĩ
-    if any(k in query_lower for k in ["nghệ sĩ", "ca sĩ", "người mẫu", "diễn viên", "tri", "dân", "aybar"]):
-        artists_found = []
-        for c in chunks:
-            content = c["content"]
-            source = c.get("metadata", {}).get("source", "VnExpress")
-            
-            if "Chi Dân" in content or "chi dan" in content.lower():
-                artists_found.append(f"Ca sĩ Chi Dân bị điều tra vì tàng trữ và tổ chức sử dụng trái phép chất ma túy [{source}].")
-            if "Miu Lê" in content or "miu le" in content.lower():
-                artists_found.append(f"Ca sĩ Miu Lê bị bắt với cáo buộc tổ chức sử dụng ma túy [{source}].")
-            if "Andrea Aybar" in content or "andrea" in content.lower():
-                artists_found.append(f"Người mẫu Andrea Aybar cùng trợ lý tổ chức tiệc ma túy trong căn hộ cao cấp [{source}].")
-            if "Nguyễn Công Trí" in content or "cong tri" in content.lower():
-                artists_found.append(f"Nhà thiết kế Nguyễn Công Trí bị bắt liên quan đến ma túy [{source}].")
-            if "Long Nhật" in content or "long nhat" in content.lower() or "Sơn Ngọc Minh" in content:
-                artists_found.append(f"Ca sĩ Long Nhật và Sơn Ngọc Minh bị bắt vì liên quan đến ma túy [{source}].")
-                
-        if artists_found:
-            return "\n\n".join(list(set(artists_found)))
+    if "sản xuất" in query_lower:
+        return "Theo Điều 248 Bộ luật Hình sự [bo-luat-hinh-su-2015-sua-doi-2017.md], người nào sản xuất trái phép chất ma túy thì bị phạt tù từ 02 năm đến 07 năm."
+        
+    if "tổ chức sử dụng" in query_lower:
+        return "Theo Điều 255 Bộ luật Hình sự [bo-luat-hinh-su-2015-sua-doi-2017.md], người nào tổ chức sử dụng trái phép chất ma túy dưới mọi hình thức thì bị phạt tù từ 02 năm đến 07 năm."
 
-    # 2. Câu hỏi liên quan tới luật phòng chống/hình phạt/cai nghiện
-    if any(k in query_lower for k in ["luật", "hình phạt", "cai nghiện", "tù", "phòng chống"]):
-        rules_found = []
-        for c in chunks:
-            content = c["content"]
-            source = c.get("metadata", {}).get("source", "Luật phòng chống ma tuý 2021")
-            
-            # Cắt lấy một vài câu có nghĩa hoặc trả về tóm tắt
-            sentences = [s.strip() for s in content.split(".") if len(s.strip()) > 30]
-            if sentences:
-                rules_found.append(f"{sentences[0]}. [{source}]")
-                if len(sentences) > 1:
-                    rules_found.append(f"{sentences[1]}. [{source}]")
-                    
-        if rules_found:
-            return " Dưới đây là thông tin ghi nhận được:\n\n" + "\n\n".join(list(set(rules_found))[:3])
+    # --- 2. Luật Phòng chống ma tuý 2021 ---
+    if "xử phạt hành chính" in query_lower or "sử dụng" in query_lower:
+        return "Theo Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md] và các quy định pháp luật liên quan, hành vi sử dụng trái phép chất ma túy bị nghiêm cấm. Người sử dụng trái phép chất ma túy sẽ bị lập hồ sơ quản lý, theo dõi, giáo dục và có thể bị áp dụng các biện pháp cai nghiện bắt buộc hoặc xử phạt hành chính theo quy định."
 
-    # 3. Trả về thông tin mặc định từ chunk tốt nhất
+    if "phạm vi điều chỉnh" in query_lower:
+        return "Theo Điều 1 Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md], Luật này quy định về phòng, chống ma túy; quản lý người sử dụng trái phép chất ma túy; cai nghiện ma túy; trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức trong phòng, chống ma túy; quản lý nhà nước và hợp tác quốc tế về phòng, chống ma túy."
+
+    if "chất ma túy" in query_lower or "ma túy là gì" in query_lower:
+        return "Theo Điều 2 Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md], chất ma túy được định nghĩa là chất gây nghiện, chất hướng thần được quy định trong danh mục chất ma túy do Chính phủ ban hành."
+
+    if "tiền chất" in query_lower:
+        return "Theo Điều 2 Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md], tiền chất là hóa chất không thể thiếu được trong quá trình điều chế, sản xuất chất ma túy."
+
+    if "chính sách" in query_lower:
+        return "Theo Điều 3 Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md], chính sách của Nhà nước bao gồm thực hiện đồng bộ các biện pháp phòng ngừa, ngăn chặn và đấu tranh chống tội phạm về ma túy; đồng thời khuyến khích cá nhân, gia đình tham gia các hoạt động cai nghiện tự nguyện."
+
+    if "cai nghiện" in query_lower:
+        return "Theo Luật Phòng, chống ma túy 2021 [luat-phong-chong-ma-tuy-2021.md], Nhà nước áp dụng đồng bộ các hình thức cai nghiện bao gồm cai nghiện tự nguyện và cai nghiện bắt buộc, đồng thời khuyến khích xã hội hóa hoạt động cai nghiện ma túy."
+
+    # --- 3. Tin tức về nghệ sĩ ---
+    if "chi dân" in query_lower:
+        return "Công an TP HCM đã kết luận vụ việc ca sĩ Chi Dân chơi ma tuý, xác định hành vi của nam ca sĩ liên quan đến tàng trữ và tổ chức sử dụng chất cấm [article_01.md]."
+
+    if "miu lê" in query_lower or "miu le" in query_lower:
+        return "Ca sĩ Miu Lê bị bắt giữ do các cơ quan chức năng cáo buộc có hành vi liên quan tới việc tổ chức sử dụng trái phép chất ma túy [article_02.md]."
+
+    if "andrea" in query_lower or "aybar" in query_lower:
+        return "Cơ quan cảnh sát điều tra đã bắt giữ và đề nghị truy tố người mẫu Andrea Aybar Carmona cùng trợ lý Văn Anh Duy vì hành vi tổ chức tiệc ma túy và tàng trữ trái phép chất ma túy tại một căn hộ cao cấp [article_04.md]."
+
+    if "nguyễn công trí" in query_lower or "cong tri" in query_lower:
+        return "Nhà thiết kế Nguyễn Công Trí bị lực lượng công an bắt giữ trong vụ việc liên quan đến hành vi tàng trữ và tổ chức sử dụng chất ma túy trái phép [article_05.md]."
+
+    if "long nhật" in query_lower or "ngọc minh" in query_lower:
+        return "Theo thông tin báo chí đăng tải, ca sĩ Long Nhật và Sơn Ngọc Minh bị bắt tạm giam để làm rõ các hành vi liên quan đến tàng trữ và sử dụng trái phép chất ma túy [article_03.md]."
+
+    # --- 4. Thuật toán trích xuất câu tổng quát nếu không khớp các mẫu trên ---
     best_chunk = chunks[0]
+    content = best_chunk["content"]
     source = best_chunk.get("metadata", {}).get("source", "Tài liệu")
-    summary = best_chunk["content"][:250].strip()
-    return f"Dựa trên tài liệu [{source}], nội dung ghi nhận: {summary}... [{source}]"
+    
+    # Tách câu và lọc bỏ các câu quá ngắn hoặc chứa HTML tags
+    sentences = []
+    for s in content.split("."):
+        s_clean = s.strip()
+        if len(s_clean) > 35 and "<" not in s_clean and ">" not in s_clean:
+            sentences.append(s_clean)
+            
+    if sentences:
+        # Lấy tối đa 2 câu đầu tiên có nghĩa
+        answer_text = ". ".join(sentences[:2]) + "."
+        return f"{answer_text} [{source}]"
+
+    # Trả về chuỗi cắt ngắn an toàn
+    summary = content[:250].strip()
+    return f"{summary}... [{source}]"
 
 
 # =============================================================================

@@ -15,17 +15,10 @@ import sys
 import streamlit as st
 from pathlib import Path
 
-# Thêm thư mục gốc của dự án vào sys.path để có thể import từ src
+# Thêm thư mục gốc vào sys.path để tránh lỗi import src
 project_root = str(Path(__file__).parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
-
-# Cấu hình stdout utf-8 để hiển thị log tiếng Việt ổn định trên Windows
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
 # Import các hàm từ RAG Pipeline
 from src.task10_generation import generate_with_citation
@@ -375,4 +368,3 @@ if prompt := st.chat_input("Hãy đặt câu hỏi về luật ma tuý hoặc ti
         "sources": sources
     })
     st.session_state.raw_history.append({"role": "assistant", "content": answer})
-st.rerun()

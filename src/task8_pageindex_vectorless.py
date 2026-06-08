@@ -50,6 +50,28 @@ def upload_documents():
         print(f"  Info: PageIndex upload skipped ({e}). Using local fallback.")
 
 
+def strip_accents(text: str) -> str:
+    """Chuyển đổi văn bản tiếng Việt có dấu thành không dấu."""
+    import unicodedata
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join([c for c in text if not unicodedata.combining(c)])
+    text = text.replace('đ', 'd').replace('Đ', 'D')
+    return text
+
+
+def tokenize_vietnamese(text: str) -> list[str]:
+    """Tokenize tiếng Việt giữ lại cả từ gốc và từ không dấu để tối ưu khớp từ khóa."""
+    text_lower = text.lower()
+    tokens = text_lower.split()
+    
+    # Tạo tokens không dấu
+    unaccented_text = strip_accents(text_lower)
+    unaccented_tokens = unaccented_text.split()
+    
+    # Kết hợp cả hai
+    return list(set(tokens + unaccented_tokens))
+
+
 def _local_bm25_search(query: str, top_k: int = 5) -> list[dict]:
     """Fallback: tìm kiếm BM25 trên corpus local khi PageIndex không khả dụng."""
     if not VECTOR_STORE_LOCAL_PATH.exists():
@@ -61,9 +83,9 @@ def _local_bm25_search(query: str, top_k: int = 5) -> list[dict]:
     if not corpus:
         return []
 
-    # Tokenize
-    query_tokens = query.lower().split()
-    tokenized_docs = [doc["content"].lower().split() for doc in corpus]
+    # Tokenize sử dụng bộ xử lý tiếng Việt nâng cao
+    query_tokens = tokenize_vietnamese(query)
+    tokenized_docs = [tokenize_vietnamese(doc["content"]) for doc in corpus]
 
     # Tính BM25
     n = len(tokenized_docs)

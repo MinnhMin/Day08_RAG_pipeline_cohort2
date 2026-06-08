@@ -100,6 +100,28 @@ def _load_corpus() -> list[dict]:
     return _corpus
 
 
+def strip_accents(text: str) -> str:
+    """Chuyển đổi văn bản tiếng Việt có dấu thành không dấu."""
+    import unicodedata
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join([c for c in text if not unicodedata.combining(c)])
+    text = text.replace('đ', 'd').replace('Đ', 'D')
+    return text
+
+
+def tokenize_vietnamese(text: str) -> list[str]:
+    """Tokenize tiếng Việt giữ lại cả từ gốc và từ không dấu để tối ưu khớp từ khóa."""
+    text_lower = text.lower()
+    tokens = text_lower.split()
+    
+    # Tạo tokens không dấu
+    unaccented_text = strip_accents(text_lower)
+    unaccented_tokens = unaccented_text.split()
+    
+    # Kết hợp cả hai
+    return list(set(tokens + unaccented_tokens))
+
+
 def build_bm25_index(corpus: list[dict]):
     """
     Xây dựng BM25 index từ corpus.
@@ -107,8 +129,8 @@ def build_bm25_index(corpus: list[dict]):
     Args:
         corpus: List of {'content': str, 'metadata': dict}
     """
-    # Tokenize - dùng split() cho tiếng Việt (đơn giản, hiệu quả)
-    tokenized_corpus = [doc["content"].lower().split() for doc in corpus]
+    # Tokenize sử dụng bộ xử lý tiếng Việt nâng cao
+    tokenized_corpus = [tokenize_vietnamese(doc["content"]) for doc in corpus]
     
     try:
         from rank_bm25 import BM25Okapi
@@ -145,8 +167,8 @@ def lexical_search(query: str, top_k: int = 10) -> list[dict]:
     if _bm25_index is None:
         _bm25_index = build_bm25_index(corpus)
     
-    # Tokenize query
-    tokenized_query = query.lower().split()
+    # Tokenize query sử dụng bộ xử lý tiếng Việt nâng cao
+    tokenized_query = tokenize_vietnamese(query)
     
     # Tính BM25 scores
     scores = _bm25_index.get_scores(tokenized_query)
