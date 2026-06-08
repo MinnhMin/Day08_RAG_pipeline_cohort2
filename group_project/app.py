@@ -85,12 +85,39 @@ Câu hỏi độc lập:"""
         except Exception:
             pass
             
-    # Fallback offline
+    # Fallback offline: Tự động ghép thực thể/tội danh quan trọng từ câu hỏi trước nếu câu hỏi mới chưa có
     last_user_msg = next((m["content"] for m in reversed(chat_history) if m["role"] == "user"), "")
-    if last_user_msg and len(query.split()) < 4:
-        keywords = " ".join([w for w in last_user_msg.split() if len(w) > 3])
-        return f"{query} {keywords}"
+    if last_user_msg:
+        query_lower = query.lower()
+        last_lower = last_user_msg.lower()
         
+        # Danh sách các từ khóa cần duy trì ngữ cảnh
+        context_keywords = [
+            "van chuyen", "vận chuyển",
+            "tang tru", "tàng trữ",
+            "san xuat", "sản xuất",
+            "to chuc", "tổ chức",
+            "su dung", "sử dụng",
+            "cai nghien", "cai nghiện",
+            "chi dan", "chi dân",
+            "miu le", "miu lê",
+            "andrea", "aybar",
+            "cong tri", "công trí",
+            "long nhat", "long nhật",
+            "ngoc minh", "ngọc minh"
+        ]
+        
+        to_append = []
+        for kw in context_keywords:
+            if kw in last_lower and kw not in query_lower:
+                # Đảm bảo không append thừa cả có dấu/không dấu
+                from src.task10_generation import _strip_accents
+                if not any(_strip_accents(kw) == _strip_accents(existing) for existing in to_append):
+                    to_append.append(kw)
+                    
+        if to_append:
+            return f"{query} {' '.join(to_append)}"
+            
     return query
 
 
@@ -116,6 +143,14 @@ st.markdown("""
         color: #f8fafc;
     }
     
+    /* Thu hẹp giao diện Streamlit để hiển thị dạng card gọn gàng */
+    .block-container, [data-testid="stAppViewBlockContainer"], .stMainBlockContainer {
+        max-width: 640px !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+        margin: 0 auto !important;
+    }
+    
     /* Hide default streamlit layout elements */
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -126,9 +161,9 @@ st.markdown("""
         background: rgba(30, 41, 59, 0.4);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 24px;
-        padding: 2rem;
-        margin-bottom: 2rem;
+        border-radius: 20px;
+        padding: 1.2rem;
+        margin-bottom: 1.2rem;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         text-align: center;
         position: relative;
@@ -141,19 +176,19 @@ st.markdown("""
         background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
     }
     .main-title {
-        font-size: 2.2rem;
+        font-size: 1.6rem;
         font-weight: 800;
         letter-spacing: -0.03em;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.2rem;
         background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
     .sub-title {
         color: #94a3b8;
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         font-weight: 400;
-        margin-bottom: 1rem;
+        margin-bottom: 0.6rem;
     }
     .status-badge {
         display: inline-flex;
@@ -161,15 +196,15 @@ st.markdown("""
         background: rgba(16, 185, 129, 0.1);
         color: #34d399;
         border: 1px solid rgba(16, 185, 129, 0.2);
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 30px;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
     .status-dot {
-        width: 8px; height: 8px;
+        width: 6px; height: 6px;
         background-color: #10b981;
         border-radius: 50%;
         margin-right: 6px;
@@ -186,46 +221,46 @@ st.markdown("""
     .msg-wrapper-user {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 1.5rem;
-        animation: bubble-in-user 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        margin-bottom: 1rem;
+        animation: bubble-in-user 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .msg-wrapper-assistant {
         display: flex;
         justify-content: flex-start;
-        margin-bottom: 1.5rem;
-        animation: bubble-in-assistant 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        margin-bottom: 1rem;
+        animation: bubble-in-assistant 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes bubble-in-user {
-        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        from { opacity: 0; transform: translateY(8px) scale(0.99); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes bubble-in-assistant {
-        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        from { opacity: 0; transform: translateY(8px) scale(0.99); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     
-    /* Bubble Content styling */
+    /* Bubble Content styling (Gọn gàng và chữ nhỏ vừa phải) */
     .bubble-user {
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: #ffffff;
-        padding: 14px 20px;
-        border-radius: 20px 20px 4px 20px;
-        max-width: 78%;
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
-        line-height: 1.55;
-        font-size: 0.98rem;
+        padding: 10px 16px;
+        border-radius: 16px 16px 4px 16px;
+        max-width: 80%;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+        line-height: 1.5;
+        font-size: 0.9rem;
     }
     .bubble-assistant {
         background: rgba(30, 41, 59, 0.7);
         backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         color: #f1f5f9;
-        padding: 16px 22px;
-        border-radius: 20px 20px 20px 4px;
-        max-width: 82%;
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
-        line-height: 1.6;
-        font-size: 0.98rem;
+        padding: 12px 18px;
+        border-radius: 16px 16px 16px 4px;
+        max-width: 85%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        line-height: 1.55;
+        font-size: 0.9rem;
     }
 
     /* Style for References container in app */

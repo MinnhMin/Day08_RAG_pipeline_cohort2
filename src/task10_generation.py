@@ -207,6 +207,46 @@ def _generate_mock_response(query: str, chunks: list[dict]) -> str:
 # GENERATION
 # =============================================================================
 
+def _strip_accents(text: str) -> str:
+    """Chuyển đổi văn bản tiếng Việt có dấu thành không dấu."""
+    import unicodedata
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join([c for c in text if not unicodedata.combining(c)])
+    text = text.replace('đ', 'd').replace('Đ', 'D')
+    return text
+
+
+def _is_context_relevant(query: str, chunks: list[dict]) -> bool:
+    """Kiểm tra xem các đoạn văn bản tìm thấy có thực sự chứa thông tin câu hỏi không."""
+    if not chunks:
+        return False
+        
+    q_clean = _strip_accents(query.lower())
+    ctx_clean = _strip_accents(" ".join([c["content"] for c in chunks]).lower())
+    
+    # Bỏ qua các từ stopword ngắn
+    stopwords = {"neu", "thi", "sao", "cho", "cua", "nhu", "the", "nao", "co", "bi", "la", "va", "trong", "nhung", "cac", "gi", "de", "lam"}
+    q_words = [w for w in q_clean.split() if w not in stopwords and len(w) > 2]
+    
+    if not q_words:
+        return True
+        
+    # Tính số từ khóa khớp trong context
+    match_count = sum(1 for w in q_words if w in ctx_clean)
+    
+    # Nếu tỷ lệ từ khóa khớp < 30%, coi như không liên quan
+    if len(q_words) > 0 and (match_count / len(q_words)) < 0.30:
+        return False
+        
+    # Kiểm tra các thuật ngữ quan trọng nếu có trong câu hỏi nhưng hoàn toàn vắng bóng trong tài liệu
+    critical_terms = ["van chuyen", "duoi 18", "18 tuoi", "vi thanh nien", "14 tuoi", "16 tuoi"]
+    for term in critical_terms:
+        if term in q_clean and term not in ctx_clean:
+            return False
+            
+    return True
+
+
 def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
     """
     End-to-end RAG generation có citation.
@@ -232,14 +272,22 @@ def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
     # Step 1: Retrieve
     chunks = retrieve(query, top_k=top_k)
 
+    # Lấy nguồn retrieval (mặc định hybrid)
+    retrieval_source = chunks[0].get("source", "hybrid") if chunks else "none"
+
+    # Kiểm tra tính liên quan của ngữ cảnh thu thập được
+    if not _is_context_relevant(query, chunks):
+        return {
+            "answer": "Tôi không tìm thấy thông tin liên quan trong cơ sở dữ liệu hiện tại.\n\nCác tài liệu được tìm thấy không chứa nội dung về chủ đề này.",
+            "sources": [],
+            "retrieval_source": retrieval_source
+        }
+
     # Step 2: Reorder
     reordered = reorder_for_llm(chunks)
 
     # Step 3: Format context
     context = format_context(reordered)
-
-    # Lấy nguồn retrieval (mặc định hybrid)
-    retrieval_source = chunks[0].get("source", "hybrid") if chunks else "none"
 
     # Trích xuất API Key
     api_key = os.getenv("OPENAI_API_KEY", "")
