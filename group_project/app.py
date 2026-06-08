@@ -12,6 +12,12 @@ Tính năng:
 import os
 import sys
 import streamlit as st
+from pathlib import Path
+
+# Thêm thư mục gốc của dự án vào sys.path để có thể import từ src
+project_root = str(Path(__file__).parent.parent)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 # Cấu hình stdout utf-8 để hiển thị log tiếng Việt ổn định trên Windows
 if hasattr(sys.stdout, "reconfigure"):
