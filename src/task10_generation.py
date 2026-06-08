@@ -238,13 +238,33 @@ def _is_context_relevant(query: str, chunks: list[dict]) -> bool:
     if len(q_words) > 0 and (match_count / len(q_words)) < 0.30:
         return False
         
+    # Nếu câu hỏi hỏi về vận chuyển hoặc mua bán nhưng không hỏi về tàng trữ,
+    # coi như không có thông tin (vì DB chỉ chứa tội tàng trữ có nhắc loại trừ hai từ này)
+    if ("van chuyen" in q_clean or "mua ban" in q_clean) and "tang tru" not in q_clean:
+        return False
+        
     # Kiểm tra các thuật ngữ quan trọng nếu có trong câu hỏi nhưng hoàn toàn vắng bóng trong tài liệu
-    critical_terms = ["van chuyen", "duoi 18", "18 tuoi", "vi thanh nien", "14 tuoi", "16 tuoi"]
+    critical_terms = ["duoi 18", "18 tuoi", "vi thanh nien", "14 tuoi", "16 tuoi", "nghiem cam"]
     for term in critical_terms:
         if term in q_clean and term not in ctx_clean:
             return False
             
     return True
+
+
+def _is_greeting(query: str) -> bool:
+    """Kiểm tra xem câu hỏi có phải là câu chào hỏi đơn giản hay không."""
+    q_clean = _strip_accents(query.strip().lower().replace("?", "").replace("!", "").replace(".", "").replace(",", ""))
+    greetings = {
+        "chao", "xin chao", "chao ban", "chao bot", "chao ad", "hello", "hi", "hey",
+        "halo", "chao bac", "chao anh", "chao chi", "chao em", "hi bot"
+    }
+    if q_clean in greetings:
+        return True
+    words = q_clean.split()
+    if len(words) <= 2 and any(w in ["chao", "hello", "hi", "hey", "halo"] for w in words):
+        return True
+    return False
 
 
 def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
@@ -269,6 +289,14 @@ def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
             'retrieval_source': str  # 'hybrid' hoặc 'pageindex'
         }
     """
+    # Xử lý các câu chào hỏi thân thiện
+    if _is_greeting(query):
+        return {
+            "answer": "Xin chào! Tôi là Trợ lý ảo DrugLaw Intelligence. Tôi sẵn sàng hỗ trợ bạn tra cứu Luật Phòng, chống ma túy và các tin tức liên quan. Hôm nay tôi có thể giúp gì cho bạn? 😊",
+            "sources": [],
+            "retrieval_source": "none"
+        }
+
     # Step 1: Retrieve
     chunks = retrieve(query, top_k=top_k)
 

@@ -15,10 +15,21 @@ import sys
 import streamlit as st
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Thêm thư mục gốc vào sys.path để tránh lỗi import src
 project_root = str(Path(__file__).parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
+
+# Đảm bảo Streamlit reload lại module src.task10_generation khi có thay đổi
+if "src.task10_generation" in sys.modules:
+    import importlib
+    importlib.reload(sys.modules["src.task10_generation"])
 
 # Import các hàm từ RAG Pipeline
 from src.task10_generation import generate_with_citation
@@ -49,6 +60,15 @@ def format_citations_to_html(text: str) -> str:
     # Thay thế ký tự xuống dòng thành thẻ br trong HTML để hiển thị đúng xuống dòng
     formatted_text = text.replace("\n", "<br>")
     return re.sub(pattern, replace_pill, formatted_text)
+
+
+def _strip_accents(text: str) -> str:
+    """Chuyển đổi văn bản tiếng Việt có dấu thành không dấu."""
+    import unicodedata
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join([c for c in text if not unicodedata.combining(c)])
+    text = text.replace('đ', 'd').replace('Đ', 'D')
+    return text
 
 
 def rewrite_query_with_history(query: str, chat_history: list) -> str:
@@ -85,39 +105,47 @@ Câu hỏi độc lập:"""
         except Exception:
             pass
             
-    # Fallback offline: Tự động ghép thực thể/tội danh quan trọng từ câu hỏi trước nếu câu hỏi mới chưa có
+    # Fallback offline: Chỉ tự động ghép thực thể/tội danh quan trọng từ câu hỏi trước
+    # nếu câu hỏi mới là câu hỏi phụ ngắn (<= 5 từ) hoặc có từ khóa liên kết ngữ cảnh ("thế nào", "thì sao", "ai", "ở đâu", "bao nhiêu", "nếu")
     last_user_msg = next((m["content"] for m in reversed(chat_history) if m["role"] == "user"), "")
     if last_user_msg:
-        query_lower = query.lower()
-        last_lower = last_user_msg.lower()
-        
-        # Danh sách các từ khóa cần duy trì ngữ cảnh
-        context_keywords = [
-            "van chuyen", "vận chuyển",
-            "tang tru", "tàng trữ",
-            "san xuat", "sản xuất",
-            "to chuc", "tổ chức",
-            "su dung", "sử dụng",
-            "cai nghien", "cai nghiện",
-            "chi dan", "chi dân",
-            "miu le", "miu lê",
-            "andrea", "aybar",
-            "cong tri", "công trí",
-            "long nhat", "long nhật",
-            "ngoc minh", "ngọc minh"
-        ]
-        
-        to_append = []
-        for kw in context_keywords:
-            if kw in last_lower and kw not in query_lower:
-                # Đảm bảo không append thừa cả có dấu/không dấu
-                from src.task10_generation import _strip_accents
-                if not any(_strip_accents(kw) == _strip_accents(existing) for existing in to_append):
-                    to_append.append(kw)
-                    
-        if to_append:
-            return f"{query} {' '.join(to_append)}"
+        q_words = query.strip().split()
+        is_follow_up = False
+        follow_up_patterns = ["thi sao", "the nao", "o dau", "ai", "bao nhieu", "con ", "neu "]
+        q_clean = _strip_accents(query.lower())
+        if len(q_words) <= 5 or any(pat in q_clean for pat in follow_up_patterns):
+            is_follow_up = True
             
+        if is_follow_up:
+            query_lower = query.lower()
+            last_lower = last_user_msg.lower()
+            
+            # Danh sách các từ khóa cần duy trì ngữ cảnh
+            context_keywords = [
+                "van chuyen", "vận chuyển",
+                "tang tru", "tàng trữ",
+                "san xuat", "sản xuất",
+                "to chuc", "tổ chức",
+                "su dung", "sử dụng",
+                "cai nghien", "cai nghiện",
+                "chi dan", "chi dân",
+                "miu le", "miu lê",
+                "andrea", "aybar",
+                "cong tri", "công trí",
+                "long nhat", "long nhật",
+                "ngoc minh", "ngọc minh"
+            ]
+            
+            to_append = []
+            for kw in context_keywords:
+                if kw in last_lower and kw not in query_lower:
+                    # Đảm bảo không append thừa cả có dấu/không dấu
+                    if not any(_strip_accents(kw) == _strip_accents(existing) for existing in to_append):
+                        to_append.append(kw)
+                        
+            if to_append:
+                return f"{query} {' '.join(to_append)}"
+                
     return query
 
 
@@ -145,9 +173,9 @@ st.markdown("""
     
     /* Thu hẹp giao diện Streamlit để hiển thị dạng card gọn gàng */
     .block-container, [data-testid="stAppViewBlockContainer"], .stMainBlockContainer {
-        max-width: 640px !important;
-        padding-top: 1.5rem !important;
-        padding-bottom: 1.5rem !important;
+        max-width: 580px !important;
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
         margin: 0 auto !important;
     }
     
@@ -161,10 +189,10 @@ st.markdown("""
         background: rgba(30, 41, 59, 0.4);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 1.2rem;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         text-align: center;
         position: relative;
         overflow: hidden;
@@ -176,7 +204,7 @@ st.markdown("""
         background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
     }
     .main-title {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         font-weight: 800;
         letter-spacing: -0.03em;
         margin-bottom: 0.2rem;
@@ -186,9 +214,9 @@ st.markdown("""
     }
     .sub-title {
         color: #94a3b8;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 400;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.5rem;
     }
     .status-badge {
         display: inline-flex;
@@ -196,24 +224,24 @@ st.markdown("""
         background: rgba(16, 185, 129, 0.1);
         color: #34d399;
         border: 1px solid rgba(16, 185, 129, 0.2);
-        padding: 3px 10px;
+        padding: 2px 8px;
         border-radius: 30px;
-        font-size: 0.72rem;
+        font-size: 0.68rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
     .status-dot {
-        width: 6px; height: 6px;
+        width: 5px; height: 5px;
         background-color: #10b981;
         border-radius: 50%;
-        margin-right: 6px;
+        margin-right: 5px;
         display: inline-block;
         animation: pulse 1.8s infinite;
     }
     @keyframes pulse {
         0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
         100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
@@ -221,21 +249,21 @@ st.markdown("""
     .msg-wrapper-user {
         display: flex;
         justify-content: flex-end;
-        margin-bottom: 1rem;
+        margin-bottom: 0.8rem;
         animation: bubble-in-user 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     .msg-wrapper-assistant {
         display: flex;
         justify-content: flex-start;
-        margin-bottom: 1rem;
+        margin-bottom: 0.8rem;
         animation: bubble-in-assistant 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     @keyframes bubble-in-user {
-        from { opacity: 0; transform: translateY(8px) scale(0.99); }
+        from { opacity: 0; transform: translateY(6px) scale(0.99); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes bubble-in-assistant {
-        from { opacity: 0; transform: translateY(8px) scale(0.99); }
+        from { opacity: 0; transform: translateY(6px) scale(0.99); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
     
@@ -243,38 +271,38 @@ st.markdown("""
     .bubble-user {
         background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: #ffffff;
-        padding: 10px 16px;
-        border-radius: 16px 16px 4px 16px;
+        padding: 8px 14px;
+        border-radius: 14px 14px 4px 14px;
         max-width: 80%;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
-        line-height: 1.5;
-        font-size: 0.9rem;
+        box-shadow: 0 3px 12px rgba(59, 130, 246, 0.15);
+        line-height: 1.45;
+        font-size: 0.88rem;
     }
     .bubble-assistant {
         background: rgba(30, 41, 59, 0.7);
         backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         color: #f1f5f9;
-        padding: 12px 18px;
-        border-radius: 16px 16px 16px 4px;
+        padding: 10px 16px;
+        border-radius: 14px 14px 14px 4px;
         max-width: 85%;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        line-height: 1.55;
-        font-size: 0.9rem;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+        line-height: 1.5;
+        font-size: 0.88rem;
     }
 
     /* Style for References container in app */
     .sources-container {
-        margin-top: 10px;
+        margin-top: 8px;
         border-top: 1px solid rgba(255, 255, 255, 0.06);
-        padding-top: 10px;
+        padding-top: 8px;
     }
     .source-card {
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 10px 14px;
-        margin-bottom: 8px;
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-bottom: 6px;
         transition: all 0.2s ease;
     }
     .source-card:hover {
