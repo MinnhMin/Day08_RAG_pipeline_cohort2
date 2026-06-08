@@ -239,11 +239,11 @@ Dưới đây là sơ đồ luồng hoạt động của hệ thống Chatbot RA
 
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
 |-----------|------|----------|------------|
-| Nguyễn Tuấn Minh | 20240001 | Thu thập, chuẩn hóa tài liệu & xây dựng Crawler (Task 1, 2, 3) | Hoàn thành |
-| Nguyễn Tuấn Minh | 20240001 | Cài đặt Indexing, Hybrid Search & Reranking (Task 4, 5, 6, 7) | Hoàn thành |
-| Nguyễn Tuấn Minh | 20240001 | Tích hợp PageIndex, RAG Generation & Citation (Task 8, 9, 10) | Hoàn thành |
-| Nguyễn Tuấn Minh | 20240001 | Xây dựng Giao diện Streamlit Chatbot & bộ nhớ (Yêu cầu 1) | Hoàn thành |
-| Nguyễn Tuấn Minh | 20240001 | Xây dựng bộ Golden Dataset & Pipeline DeepEval (Yêu cầu 2) | Hoàn thành |
+| Nguyễn Tuấn Minh | 2A202600692 | Thu thập, chuẩn hóa tài liệu & xây dựng Crawler (Task 1, 2, 3) | Hoàn thành |
+| Nguyễn Tuấn Minh | 2A202600692 | Cài đặt Indexing, Hybrid Search & Reranking (Task 4, 5, 6, 7) | Hoàn thành |
+| Nguyễn Tuấn Minh | 2A202600692 | Tích hợp PageIndex, RAG Generation & Citation (Task 8, 9, 10) | Hoàn thành |
+| Nguyễn Tuấn Minh | 2A202600692 | Xây dựng Giao diện Streamlit Chatbot & bộ nhớ (Yêu cầu 1) | Hoàn thành |
+| Nguyễn Tuấn Minh | 2A202600692 | Xây dựng bộ Golden Dataset & Pipeline DeepEval (Yêu cầu 2) | Hoàn thành |
 
 ---
 

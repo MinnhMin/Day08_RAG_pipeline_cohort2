@@ -13,8 +13,8 @@
 | Faithfulness | 0.77 | 0.75 | +0.02 |
 | Answer Relevance | 0.93 | 0.89 | +0.04 |
 | Context Recall | 0.80 | 0.59 | +0.21 |
-| Context Precision | 0.86 | 0.73 | +0.13 |
-| **Average** | **0.84** | **0.74** | **+0.10** |
+| Context Precision | 0.85 | 0.77 | +0.08 |
+| **Average** | **0.84** | **0.75** | **+0.09** |
 
 ---
 
@@ -29,7 +29,7 @@
 * Chỉ sử dụng duy nhất mô hình Semantic Search để tìm kiếm các văn bản liên quan dựa trên Cosine Similarity, không áp dụng thêm bất kỳ bộ lọc từ khóa hoặc reranking nào.
 
 **Kết luận:**
-* Cấu hình **Config A (Hybrid + Rerank)** đạt điểm số trung bình vượt trội hơn hẳn Config B (+0.10). 
+* Cấu hình **Config A (Hybrid + Rerank)** đạt điểm số trung bình vượt trội hơn hẳn Config B (+0.09). 
 * Điểm số cải thiện rõ rệt nhất ở chỉ số **Context Recall** và **Context Precision** nhờ vào sự kết hợp giữa tìm kiếm ngữ nghĩa và tìm kiếm từ khóa chính xác của BM25, giúp bao quát đầy đủ thông tin pháp luật có cấu trúc chặt chẽ.
 
 ---
