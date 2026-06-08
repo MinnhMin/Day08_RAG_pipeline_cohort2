@@ -1,17 +1,82 @@
 [
   {
     "question": "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo Điều 249 Bộ luật Hình sự?",
-    "expected_answer": "Phạt tù từ 1 đến 5 năm đối với trường hợp tàng trữ từ 1g đến dưới 5g heroin hoặc cocaine, hoặc chất ma tuý khác với khối lượng tương đương.",
+    "expected_answer": "Người nào tàng trữ trái phép chất ma túy mà không nhằm mục đích mua bán, vận chuyển, sản xuất trái phép chất ma túy thì bị phạt tù từ 01 năm đến 05 năm.",
     "expected_context": "Bộ luật Hình sự 2015, Điều 249"
   },
   {
     "question": "Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào?",
-    "expected_answer": "Cai nghiện tự nguyện tại gia đình, cai nghiện tự nguyện tại cộng đồng, cai nghiện tự nguyện tại cơ sở cai nghiện, và cai nghiện bắt buộc tại cơ sở cai nghiện.",
-    "expected_context": "Luật Phòng chống ma tuý 2021, Chương V"
+    "expected_answer": "Khuyến khích cá nhân, gia đình tham gia các hoạt động cai nghiện tự nguyện.",
+    "expected_context": "Luật Phòng chống ma tuý 2021"
   },
   {
     "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
-    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
-    "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống.",
+    "expected_context": "Nghị định danh mục chất ma tuý"
+  },
+  {
+    "question": "Hình phạt tù cho Tội sản xuất trái phép chất ma túy quy định tại Điều 248 là bao nhiêu?",
+    "expected_answer": "Người nào sản xuất trái phép chất ma túy thì bị phạt tù từ 02 năm đến 07 năm.",
+    "expected_context": "Bộ luật Hình sự 2015, Điều 248"
+  },
+  {
+    "question": "Hình phạt tù cho Tội tổ chức sử dụng trái phép chất ma túy theo Điều 255 là bao nhiêu?",
+    "expected_answer": "Người nào tổ chức sử dụng trái phép chất ma túy dưới mọi hình thức thì bị phạt tù từ 02 năm đến 07 năm.",
+    "expected_context": "Bộ luật Hình sự 2015, Điều 255"
+  },
+  {
+    "question": "Phạm vi điều chỉnh của Luật Phòng chống ma túy 2021 bao gồm những nội dung gì?",
+    "expected_answer": "Luật quy định về phòng, chống ma túy; quản lý người sử dụng trái phép chất ma túy; cai nghiện ma túy; trách nhiệm của cá nhân, gia đình, cơ quan, tổ chức trong phòng, chống ma túy; quản lý nhà nước và hợp tác quốc tế về phòng, chống ma túy.",
+    "expected_context": "Luật Phòng chống ma túy 2021, Điều 1"
+  },
+  {
+    "question": "Chất ma túy được giải thích như thế nào trong Luật Phòng chống ma túy 2021?",
+    "expected_answer": "Chất ma túy là chất gây nghiện, chất hướng thần được quy định trong danh mục chất ma túy do Chính phủ ban hành.",
+    "expected_context": "Luật Phòng chống ma túy 2021, Điều 2"
+  },
+  {
+    "question": "Tiền chất được định nghĩa là gì theo Luật Phòng chống ma túy 2021?",
+    "expected_answer": "Tiền chất là hóa chất không thể thiếu được trong quá trình điều chế, sản xuất chất ma túy.",
+    "expected_context": "Luật Phòng chống ma túy 2021, Điều 2"
+  },
+  {
+    "question": "Chính sách của Nhà nước về phòng, chống ma túy gồm những gì theo Điều 3?",
+    "expected_answer": "Thực hiện đồng bộ các biện pháp phòng ngừa, ngăn chặn và đấu tranh chống tội phạm về ma túy; Khuyến khích cá nhân, gia đình tham gia các hoạt động cai nghiện tự nguyện.",
+    "expected_context": "Luật Phòng chống ma túy 2021, Điều 3"
+  },
+  {
+    "question": "Thông tin về vụ việc ca sĩ Chi Dân chơi ma tuý có nội dung kết luận thế nào từ Công an TP HCM?",
+    "expected_answer": "Công an TP HCM kết luận vụ ca sĩ Chi Dân chơi ma tuý, liên quan đến hành vi tàng trữ và sử dụng chất cấm.",
+    "expected_context": "Báo Người Lao Động, bài viết về ca sĩ Chi Dân chơi ma tuý"
+  },
+  {
+    "question": "Ca sĩ Miu Lê bị bắt với cáo buộc gì liên quan đến ma túy?",
+    "expected_answer": "Ca sĩ Miu Lê bị bắt với cáo buộc tổ chức sử dụng ma túy.",
+    "expected_context": "Báo VnExpress, bài viết về ca sĩ Miu Lê bị bắt"
+  },
+  {
+    "question": "Người mẫu Andrea Aybar cùng trợ lý bị bắt vì hành vi gì?",
+    "expected_answer": "Người mẫu Andrea Aybar cùng trợ lý tổ chức tiệc ma túy trong căn hộ cao cấp.",
+    "expected_context": "Báo VnExpress, bài viết về Andrea Aybar tổ chức tiệc ma túy"
+  },
+  {
+    "question": "Nhà thiết kế Nguyễn Công Trí bị bắt vì liên quan đến ma túy như thế nào?",
+    "expected_answer": "Nhà thiết kế Nguyễn Công Trí bị bắt vì liên quan đến ma túy.",
+    "expected_context": "Báo VnExpress, bài viết về nhà thiết kế Nguyễn Công Trí bị bắt"
+  },
+  {
+    "question": "Ca sĩ Long Nhật và Sơn Ngọc Minh bị bắt vì lý do gì?",
+    "expected_answer": "Ca sĩ Long Nhật và Sơn Ngọc Minh bị bắt vì liên quan đến ma túy.",
+    "expected_context": "Báo VnExpress, bài viết về ca sĩ Long Nhật và Sơn Ngọc Minh bị bắt"
+  },
+  {
+    "question": "Vụ việc tổ chức tiệc ma túy của Andrea Aybar diễn ra ở đâu?",
+    "expected_answer": "Vụ việc diễn ra tại một căn hộ cao cấp.",
+    "expected_context": "Báo VnExpress, bài viết về người mẫu Andrea Aybar"
+  },
+  {
+    "question": "Trách nhiệm cai nghiện ma túy tự nguyện được khuyến khích cho ai theo Luật 2021?",
+    "expected_answer": "Khuyến khích cá nhân, gia đình tham gia các hoạt động cai nghiện tự nguyện.",
+    "expected_context": "Luật Phòng chống ma túy 2021, Điều 3"
   }
 ]

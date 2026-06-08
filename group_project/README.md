@@ -170,8 +170,67 @@ run_dashboard()
 
 ## Kiến Trúc Hệ Thống
 
+Dưới đây là sơ đồ luồng hoạt động của hệ thống Chatbot RAG tích hợp Hybrid Search và cơ chế Reranking / Fallback:
+
 ```
-[Vẽ diagram kiến trúc ở đây]
+                      +-------------------+
+                      |   User (Browser)  |
+                      +---------+---------+
+                                |
+                                v (Hỏi đáp, Trò chuyện)
+                      +---------+---------+
+                      |   Streamlit App   |  <---+ (Lịch sử hội thoại)
+                      +---------+---------+
+                                |
+                                v (Standalone Query / Query Rewriter)
+                      +---------+---------+
+                      | Retrieval Pipeline|
+                      +----+---------+----+
+                           |         |
+      +--------------------+         +--------------------+
+      |                                                   |
+      v (Dense Retrieval)                                 v (Sparse Retrieval)
++-----+--------------+                              +-----+--------------+
+|  Semantic Search   |                              |  Lexical Search    |
+| (Local JSON Index) |                              |  (BM25 Okapi)      |
++-----+--------------+                              +-----+--------------+
+      |                                                   |
+      +--------------------+         +--------------------+
+                           |         |
+                           v         v
+                      +----+---------+----+
+                      |     RRF Merge     |
+                      +---------+---------+
+                                |
+                                v
+                      +---------+---------+
+                      |     Reranking     |
+                      +---------+---------+
+                                |
+            +-------------------+-------------------+
+            | (Relevance Score >= 0.3)              | (Relevance Score < 0.3)
+            v                                       v (Fallback)
+      +-----+---------+                       +-----+---------+
+      |  Best Chunks  |                       |   PageIndex   |
+      +-----+---------+                       | Vectorless RAG|
+            |                                 +-----+---------+
+            |                                       |
+            +-------------------+-------------------+
+                                |
+                                v
+                      +---------+---------+
+                      | Document Reorder  | (Chống lost-in-the-middle)
+                      +---------+---------+
+                                |
+                                v
+                      +---------+---------+
+                      |   GPT-4o-mini     | (Hoặc Smart Mock Generator)
+                      +---------+---------+
+                                |
+                                v (Câu trả lời có Citation & Sources)
+                      +---------+---------+
+                      |   User (Browser)  |
+                      +-------------------+
 ```
 
 ---
@@ -180,24 +239,34 @@ run_dashboard()
 
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
 |-----------|------|----------|------------|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| Nguyễn Tuấn Minh | 20240001 | Thu thập, chuẩn hóa tài liệu & xây dựng Crawler (Task 1, 2, 3) | Hoàn thành |
+| Nguyễn Tuấn Minh | 20240001 | Cài đặt Indexing, Hybrid Search & Reranking (Task 4, 5, 6, 7) | Hoàn thành |
+| Nguyễn Tuấn Minh | 20240001 | Tích hợp PageIndex, RAG Generation & Citation (Task 8, 9, 10) | Hoàn thành |
+| Nguyễn Tuấn Minh | 20240001 | Xây dựng Giao diện Streamlit Chatbot & bộ nhớ (Yêu cầu 1) | Hoàn thành |
+| Nguyễn Tuấn Minh | 20240001 | Xây dựng bộ Golden Dataset & Pipeline DeepEval (Yêu cầu 2) | Hoàn thành |
 
 ---
 
 ## Hướng Dẫn Chạy
 
+### 1. Cài đặt môi trường
 ```bash
-# Cài đặt dependencies
+# Cài đặt các thư viện cần thiết
 pip install -r requirements.txt
-
-# Chạy app
-streamlit run app.py
-# hoặc
-chainlit run app.py
 ```
+
+### 2. Khởi chạy Chatbot UI
+```bash
+# Khởi chạy giao diện Streamlit Chatbot
+streamlit run group_project/app.py
+```
+
+### 3. Khởi chạy Evaluation Pipeline
+```bash
+# Thực hiện đánh giá tự động và so sánh A/B
+python -m group_project.evaluation.eval_pipeline
+```
+Báo cáo kết quả sẽ được kết xuất trực tiếp ra tệp tin: [results.md](file:///d:/VinAI/Day08_RAG_pipeline_cohort2/group_project/evaluation/results.md)
 
 ---
 
