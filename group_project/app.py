@@ -10,6 +10,7 @@ Tính năng:
 """
 
 import os
+import re
 import sys
 import streamlit as st
 from pathlib import Path
@@ -31,18 +32,37 @@ from src.task10_generation import generate_with_citation
 
 
 # =============================================================================
-# CHATBOT MEMORY & QUERY REWRITING
+# UTILS & HELPERS
 # =============================================================================
 
+def format_citations_to_html(text: str) -> str:
+    """Tự động chuyển đổi các trích dẫn dạng [source] thành pill HTML đẹp mắt."""
+    pattern = r"\[([^\]]+)\]"
+    def replace_pill(match):
+        content = match.group(1)
+        # Phân loại màu sắc pill dựa trên tên tài liệu
+        if "luat" in content.lower() or "bo-luat" in content.lower() or "nghi-dinh" in content.lower():
+            bg = "rgba(59, 130, 246, 0.15)"
+            color = "#60a5fa"
+            border = "rgba(59, 130, 246, 0.3)"
+            icon = "⚖️ "
+        else:
+            bg = "rgba(245, 158, 11, 0.15)"
+            color = "#fbbf24"
+            border = "rgba(245, 158, 11, 0.3)"
+            icon = "📰 "
+        return f'<span style="background: {bg}; color: {color}; padding: 2px 8px; border-radius: 6px; font-size: 0.85em; border: 1px solid {border}; font-weight: 600; margin: 0 2px; display: inline-flex; align-items: center; white-space: nowrap;">{icon}{content}</span>'
+    
+    # Thay thế ký tự xuống dòng thành thẻ br trong HTML để hiển thị đúng xuống dòng
+    formatted_text = text.replace("\n", "<br>")
+    return re.sub(pattern, replace_pill, formatted_text)
+
+
 def rewrite_query_with_history(query: str, chat_history: list) -> str:
-    """
-    Sử dụng lịch sử trò chuyện để tinh chỉnh câu hỏi kế tiếp (Follow-up)
-    thành câu hỏi độc lập (Standalone Query) trước khi đưa vào retrieval.
-    """
+    """Sử dụng lịch sử trò chuyện để tinh chỉnh câu hỏi kế tiếp (Follow-up) thành Standalone Query."""
     if not chat_history:
         return query
     
-    # Chỉ lấy 2 lượt hội thoại gần nhất để tránh loãng ngữ cảnh
     recent_history = chat_history[-2:]
     history_str = ""
     for msg in recent_history:
@@ -72,11 +92,9 @@ Câu hỏi độc lập:"""
         except Exception:
             pass
             
-    # Fallback offline: Ghép từ khóa từ câu hỏi trước để làm giàu ngữ cảnh tìm kiếm
+    # Fallback offline
     last_user_msg = next((m["content"] for m in reversed(chat_history) if m["role"] == "user"), "")
     if last_user_msg and len(query.split()) < 4:
-        # Nếu câu hỏi follow-up quá ngắn (vd: "Ở đâu?", "Ai?", "Hình phạt thế nào?")
-        # Ghép thêm chủ ngữ từ câu hỏi trước
         keywords = " ".join([w for w in last_user_msg.split() if len(w) > 3])
         return f"{query} {keywords}"
         
@@ -84,7 +102,7 @@ Câu hỏi độc lập:"""
 
 
 # =============================================================================
-# STREAMLIT CONFIG & STYLING (Premium Theme)
+# STREAMLIT CONFIG & PREMIUM STYLING
 # =============================================================================
 
 st.set_page_config(
@@ -94,77 +112,147 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom Premium CSS (Dark Mode & Elegant accents)
+# Custom Premium CSS with responsive details, animations and typography
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-    /* Tổng thể font và background */
+    /* Reset & Typography */
     html, body, [data-testid="stAppViewContainer"] {
-        font-family: 'Outfit', sans-serif;
-        background-color: #0b0f19;
-        color: #e2e8f0;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: radial-gradient(circle at top center, #0f172a 0%, #020617 100%);
+        color: #f8fafc;
     }
     
-    /* Custom Header block */
-    .header-container {
+    /* Hide default streamlit layout elements */
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stHeader"] {background: transparent;}
+    
+    /* Header card design */
+    .header-card {
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         text-align: center;
-        padding: 2.5rem 0 1.5rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .header-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
     }
     .main-title {
-        background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+        font-size: 2.2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.4rem;
+        background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.8rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.025em;
     }
     .sub-title {
         color: #94a3b8;
-        font-size: 1.1rem;
-        font-weight: 300;
-    }
-
-    /* Định dạng Chat container */
-    [data-testid="stChatMessageContainer"] {
-        background-color: transparent;
-    }
-    
-    /* Bong bóng chat Assistant */
-    .chat-assistant-bubble {
-        background-color: #1e293b;
-        border-radius: 16px;
-        padding: 1.2rem;
-        border: 1.5px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        color: #f1f5f9;
-        line-height: 1.6;
+        font-size: 0.95rem;
+        font-weight: 400;
         margin-bottom: 1rem;
     }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .status-dot {
+        width: 8px; height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        margin-right: 6px;
+        display: inline-block;
+        animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Custom Chat Message Containers */
+    .msg-wrapper-user {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1.5rem;
+        animation: bubble-in-user 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .msg-wrapper-assistant {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 1.5rem;
+        animation: bubble-in-assistant 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes bubble-in-user {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes bubble-in-assistant {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
     
-    /* Bong bóng chat User */
-    .chat-user-bubble {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-        border-radius: 16px;
-        padding: 1.2rem;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+    /* Bubble Content styling */
+    .bubble-user {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: #ffffff;
+        padding: 14px 20px;
+        border-radius: 20px 20px 4px 20px;
+        max-width: 78%;
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+        line-height: 1.55;
+        font-size: 0.98rem;
+    }
+    .bubble-assistant {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
+        padding: 16px 22px;
+        border-radius: 20px 20px 20px 4px;
+        max-width: 82%;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
         line-height: 1.6;
-        margin-bottom: 1rem;
+        font-size: 0.98rem;
     }
 
-    /* Custom Input chat style */
-    [data-testid="stChatInput"] {
-        border-radius: 30px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        background-color: #111827 !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    /* Style for References container in app */
+    .sources-container {
+        margin-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 10px;
     }
-    
-    /* Hide default Streamlit footer */
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    .source-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+    .source-card:hover {
+        border-color: rgba(99, 102, 241, 0.3);
+        background: rgba(15, 23, 42, 0.8);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -173,11 +261,14 @@ st.markdown("""
 # APP LAYOUT
 # =============================================================================
 
-# Title Block
+# Header Card
 st.markdown("""
-<div class="header-container">
-    <div class="main-title">⚖️ DrugLaw RAG Chatbot</div>
-    <div class="sub-title">Trợ lý Hỏi đáp Pháp luật Ma tuý & Tin tức liên quan</div>
+<div class="header-card">
+    <div class="main-title">⚖️ DrugLaw Intelligence</div>
+    <div class="sub-title">Trợ lý tra cứu và hỏi đáp thông minh Luật Phòng chống ma tuý & Tin tức</div>
+    <div class="status-badge">
+        <span class="status-dot"></span>Hệ thống RAG hoạt động tốt
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -185,68 +276,103 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "raw_history" not in st.session_state:
-    st.session_state.raw_history = []  # Lưu để dùng làm context cho query rewriter
+    st.session_state.raw_history = []
 
-# Hiển thị lịch sử trò chuyện
+# Hiển thị lịch sử trò chuyện bằng Custom HTML/CSS
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        if msg["role"] == "assistant":
-            # Assistant bubble
-            st.markdown(f'<div class="chat-assistant-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-            # Hiển thị references dưới dạng expander
-            if "sources" in msg and msg["sources"]:
-                with st.expander("📚 Tài liệu tham khảo / Sources"):
-                    for idx, src in enumerate(msg["sources"], 1):
-                        source_name = src.get("metadata", {}).get("source", f"Source {idx}")
-                        doc_type = src.get("metadata", {}).get("type", "Document")
-                        st.markdown(f"**[{idx}] {source_name}** *(Loại: {doc_type})*")
-                        st.caption(src["content"])
-                        st.markdown("---")
-        else:
-            # User bubble
-            st.markdown(f'<div class="chat-user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
+    if msg["role"] == "user":
+        st.markdown(f"""
+        <div class="msg-wrapper-user">
+            <div class="bubble-user">{msg["content"]}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Assistant
+        formatted_html = format_citations_to_html(msg["content"])
+        st.markdown(f"""
+        <div class="msg-wrapper-assistant">
+            <div class="bubble-assistant">{formatted_html}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Hiển thị references dưới dạng expander
+        if "sources" in msg and msg["sources"]:
+            with st.expander("📚 Tài liệu tham khảo / Sources"):
+                for idx, src in enumerate(msg["sources"], 1):
+                    source_name = src.get("metadata", {}).get("source", f"Source {idx}")
+                    doc_type = src.get("metadata", {}).get("type", "Document")
+                    # Gán nhãn icon cho loại tài liệu
+                    tag_color = "#3b82f6" if doc_type == "legal" else "#f59e0b"
+                    tag_name = "Luật Pháp" if doc_type == "legal" else "Tin Tức"
+                    
+                    st.markdown(f"""
+                    <div class="source-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="font-weight: 600; color: #f1f5f9;">[{idx}] {source_name}</span>
+                            <span style="background: {tag_color}1a; color: {tag_color}; border: 1px solid {tag_color}33; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;">{tag_name}</span>
+                        </div>
+                        <div style="font-size: 0.84rem; color: #94a3b8; line-height: 1.5;">{src['content']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
 # Xử lý nhập liệu mới từ User
-if prompt := st.chat_input("Hãy hỏi tôi về luật ma tuý hoặc nghệ sĩ liên quan..."):
+if prompt := st.chat_input("Hãy đặt câu hỏi về luật ma tuý hoặc tin tức nghệ sĩ..."):
     # 1. Hiển thị câu hỏi của User
-    with st.chat_message("user"):
-        st.markdown(f'<div class="chat-user-bubble">{prompt}</div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="msg-wrapper-user">
+        <div class="bubble-user">{prompt}</div>
+    </div>
+    """, unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.raw_history.append({"role": "user", "content": prompt})
 
     # 2. Xử lý logic RAG
-    with st.chat_message("assistant"):
-        # Tinh chỉnh câu hỏi từ lịch sử hội thoại
-        refined_query = rewrite_query_with_history(prompt, st.session_state.raw_history[:-1])
+    # Tinh chỉnh câu hỏi từ lịch sử hội thoại
+    refined_query = rewrite_query_with_history(prompt, st.session_state.raw_history[:-1])
+    
+    # Nếu câu hỏi được viết lại khác câu hỏi gốc, in thông tin debug phụ
+    if refined_query != prompt:
+        st.caption(f"🔍 *Hệ thống tự động tinh chỉnh ngữ cảnh hỏi:* **{refined_query}**")
         
-        # Nếu câu hỏi được viết lại khác câu hỏi gốc, in thông tin debug ẩn/phụ
-        if refined_query != prompt:
-            st.caption(f"🔍 *Đang truy vấn với ngữ cảnh:* **{refined_query}**")
-            
-        with st.spinner("Đang tra cứu cơ sở dữ liệu pháp luật và tin tức..."):
-            # Gọi hàm RAG pipeline hoàn chỉnh (Task 10)
-            result = generate_with_citation(refined_query)
-            answer = result.get("answer", "Tôi không thể xử lý yêu cầu lúc này.")
-            sources = result.get("sources", [])
-            retrieval_src = result.get("retrieval_source", "hybrid")
+    with st.spinner("Đang tra cứu cơ sở dữ liệu pháp luật và tin tức..."):
+        # Gọi hàm RAG pipeline hoàn chỉnh (Task 10)
+        result = generate_with_citation(refined_query)
+        answer = result.get("answer", "Tôi không thể xử lý yêu cầu lúc này.")
+        sources = result.get("sources", [])
+        retrieval_src = result.get("retrieval_source", "hybrid")
 
-        # Hiển thị bong bóng trả lời
-        st.markdown(f'<div class="chat-assistant-bubble">{answer}</div>', unsafe_allow_html=True)
+    # Hiển thị bong bóng trả lời với format citation
+    formatted_html = format_citations_to_html(answer)
+    st.markdown(f"""
+    <div class="msg-wrapper-assistant">
+        <div class="bubble-assistant">{formatted_html}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        # Hiển thị tài liệu tham khảo nếu có
-        if sources:
-            with st.expander("📚 Tài liệu tham khảo / Sources"):
-                for idx, src in enumerate(sources, 1):
-                    source_name = src.get("metadata", {}).get("source", f"Source {idx}")
-                    doc_type = src.get("metadata", {}).get("type", "Document")
-                    st.markdown(f"**[{idx}] {source_name}** *(Loại: {doc_type})*")
-                    st.caption(src["content"])
-                    st.markdown("---")
-                    
-        # Lưu vào lịch sử hội thoại
-        st.session_state.messages.append({
-            "role": "assistant",
-            "content": answer,
-            "sources": sources
-        })
-        st.session_state.raw_history.append({"role": "assistant", "content": answer})
+    # Hiển thị tài liệu tham khảo nếu có
+    if sources:
+        with st.expander("📚 Tài liệu tham khảo / Sources"):
+            for idx, src in enumerate(sources, 1):
+                source_name = src.get("metadata", {}).get("source", f"Source {idx}")
+                doc_type = src.get("metadata", {}).get("type", "Document")
+                tag_color = "#3b82f6" if doc_type == "legal" else "#f59e0b"
+                tag_name = "Luật Pháp" if doc_type == "legal" else "Tin Tức"
+                
+                st.markdown(f"""
+                <div class="source-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <span style="font-weight: 600; color: #f1f5f9;">[{idx}] {source_name}</span>
+                        <span style="background: {tag_color}1a; color: {tag_color}; border: 1px solid {tag_color}33; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;">{tag_name}</span>
+                    </div>
+                    <div style="font-size: 0.84rem; color: #94a3b8; line-height: 1.5;">{src['content']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+    # Lưu vào lịch sử hội thoại
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": answer,
+        "sources": sources
+    })
+    st.session_state.raw_history.append({"role": "assistant", "content": answer})
+st.rerun()
